@@ -1,0 +1,13 @@
+#!/bin/bash
+
+CLI="cli"
+SERVER="server"
+MODE="$1"
+
+if [ "$MODE" = "$SERVER" ]; then
+    /bin/bash rediss-server
+elif [ "$MODE" = "$CLI" ]; then
+    /bin/bash rediss-cli
+else
+    echo "unknow mode '$MODE', aborting . . ."
+fi

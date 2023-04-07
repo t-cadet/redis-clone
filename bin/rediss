@@ -5,9 +5,9 @@ SERVER="server"
 MODE="$1"
 
 if [ "$MODE" = "$SERVER" ]; then
-    /bin/bash rediss-server
+    ./rediss-server
 elif [ "$MODE" = "$CLI" ]; then
-    /bin/bash rediss-cli
+    ./rediss-cli
 else
     echo "unknow mode '$MODE', aborting . . ."
 fi

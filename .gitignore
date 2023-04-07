@@ -1,0 +1,6 @@
+rediss-cli/bin
+rediss-server/bin
+bin/rediss-cli
+bin/rediss-server
+
+.vscode

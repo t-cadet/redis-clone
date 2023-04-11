@@ -1,6 +1,6 @@
 build:
 	mkdir -p bin
-	clang++ -Wall main.cpp -o bin/rediss-server
+	clang++ --std=c++20 -Wall main.cpp -o bin/rediss-server
 
 run: build
 	bin/rediss-server

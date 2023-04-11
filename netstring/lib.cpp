@@ -5,13 +5,15 @@ using std::string;
 
 namespace netstring
 {
+    template<class T, class U>
+    concept Derived = std::is_base_of<U, T>::value;
 
     bool is_digit(char c)
     {
         return '0' <= c && c <= '9';
     }
 
-    template <typename I, typename std::enable_if<std::is_base_of<std::basic_istream<char>, I>::value>::type>
+    template <typename I> requires Derived<I, std::basic_istream<char>>
     class reader
     {
     private:
@@ -70,7 +72,7 @@ namespace netstring
         // int read_list
     };
 
-    template <typename O, typename std::enable_if<std::is_base_of<std::basic_ostream<char>, O>::value>::type>
+    template <typename O> requires Derived<O, std::basic_ostream<char>>
     class writer
     {
     private:

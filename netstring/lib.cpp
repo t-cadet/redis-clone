@@ -8,11 +8,6 @@ namespace netstring
     template<class T, class U>
     concept Derived = std::is_base_of<U, T>::value;
 
-    bool is_digit(char c)
-    {
-        return '0' <= c && c <= '9';
-    }
-
     template <typename I> requires Derived<I, std::basic_istream<char>>
     class reader
     {
@@ -32,7 +27,7 @@ namespace netstring
                 (true)
                 {
                     char c = inner.get();
-                    if (is_digit (c))
+                    if (std::isdigit (c))
                     {
                         size_char_count++;
                         payload_size *= 10;

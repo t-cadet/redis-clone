@@ -1,6 +1,7 @@
-rediss-cli/bin
-rediss-server/bin
-bin/rediss-cli
-bin/rediss-server
+bin/cli
+bin/server
+bin/*.test
+
+store-save
 
 .vscode

@@ -1,3 +1,21 @@
+> : included in
+store > cmd, server
+cmd, net > client, server
+
+server:
+ - server creates store
+ - server listens on socket
+ - server parses received commands
+ - server executes commands (commands need to know about the store)
+ - server sends response on socket
+
+client:
+ - connect to server
+ - query user for text
+ - send text to server
+ - parse response to cmd result
+ - display response
+
 Architecture:
  - netstring
  - cmd 

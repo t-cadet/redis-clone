@@ -1,8 +1,9 @@
 { pkgs ? import <nixpkgs> {} }:
 
 pkgs.mkShell {
-  name = "redis-clone";
+  name = "rediss";
   buildInputs = with pkgs; [
     clang_15
+    gnumake
   ];
 }

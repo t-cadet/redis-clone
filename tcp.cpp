@@ -25,8 +25,6 @@ using std::monostate;
 #include <unistd.h>
 
 namespace tcp {
-    #define value_or_return(expected) {(auto res = (expected), res ? res.value() : (return res.error();))}
-
     // TODO: provide error enum instead of string?
     using Error = std::string;
     template<class T>
@@ -51,15 +49,10 @@ namespace tcp {
     }
 
     static expected<sockaddr_in> make_sockaddr(string_view host, uint16_t port) {
-        auto sin_addr = _inet_pton(AF_INET, host);
-        if (!sin_addr) {
-            // FIXME: handle expected with macro
-            return sin_addr.err();
-        }
         return sockaddr_in {
             .sin_family = AF_INET,
             .sin_port = htons(port),
-            .sin_addr = sin_addr.val(),
+            .sin_addr = VALUE_OR(RETURN, _inet_pton(AF_INET, host)),
         };
     }
 
@@ -71,10 +64,10 @@ namespace tcp {
     // .listen()
     // .accept()
     //
-    // use templates and type state to e.g. prevent from calling listen on a non bound socket
+    // TODO: use templates and type state to e.g. prevent from calling listen on a non bound socket
     class Socket {
-        int fd;
-        Socket(int fd_): fd(fd_) {}
+        int fd = -1;
+        explicit Socket(int fd_): fd(fd_) {}
 
         public:
 
@@ -83,60 +76,46 @@ namespace tcp {
             if (fd == -1) {
                 return std::string(strerror(errno));
             }
-            return expected<Socket>(Socket(fd));
-        }
-
-        // FIXME: remove when create works properly
-        static Socket create_unsafe() {
-            int fd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-            if (fd == -1) {
-                ::std::cerr << strerror(errno) << std::endl;
-                std::terminate();
-            }
             return Socket(fd);
         }
 
         // no copy because Socket contains a ressource
-        Socket(Socket&) = delete;
-        Socket& operator=(Socket&) = delete;
-        Socket(Socket&&) = default;
-        Socket& operator=(Socket&&) = default;
+        Socket(Socket const&) = delete;
+        Socket& operator=(Socket const&) = delete;
+        Socket(Socket&& other) {
+            fd = other.fd;
+            other.fd = -1;
+        }
+        Socket& operator=(Socket&& other) {
+            if (this != &other) {
+                this->~Socket();
+                new (this) Socket(std::move(other));
+            }
+            return *this;
+        }
         ~Socket() {
-            // ::std::cerr << "socket destructor" << std::endl;
-            shutdown(fd, SHUT_RDWR);
-            close(fd);
+            if (fd != -1) {
+                shutdown(fd, SHUT_RDWR);
+                close(fd);
+            }
         }
 
         // TODO: builder pattern? (return expected<Socket> or expected<Socket&>)
         expected<monostate> connect(std::string_view host, uint16_t port) {
-            auto sa_e = make_sockaddr(host, port);
-            if (!sa_e) {
-                // FIXME: handle expected with macro
-                return sa_e.err();
-            }
-            auto sock_addr = sa_e.val();
-
-            if (::connect(fd, reinterpret_cast<sockaddr *>(&sock_addr), sizeof sock_addr) == -1) {  // error: bad file descriptor    
+            auto sock_addr = VALUE_OR(RETURN, make_sockaddr(host, port));
+            if (::connect(fd, reinterpret_cast<sockaddr *>(&sock_addr), sizeof sock_addr) == -1) {
                 close(fd); // TODO: is it needed?
                 return std::string(strerror(errno));
             }
-
             return monostate{};
         }
 
         expected<monostate> bind(std::string_view host, uint16_t port) {
-            auto sa_e = make_sockaddr(host, port);
-            if (!sa_e) {
-                // FIXME: handle expected with macro
-                return sa_e.err();
-            }
-            auto sock_addr = sa_e.val();
-            
+            auto sock_addr = VALUE_OR(RETURN, make_sockaddr(host, port));            
             if (::bind(fd, reinterpret_cast<sockaddr *>(&sock_addr), sizeof sock_addr) == -1) {
                 close(fd); // TODO: needed?
                 return std::string(strerror(errno));
             }
-
             return monostate{};
         }
 
@@ -152,13 +131,10 @@ namespace tcp {
 
         // TODO: returns the peer's address too ? (address abstraction containing the host & port?)
         // TODO: look into SOCK_CLOEXEC
-        // expected<Socket> accept() {
-        Socket accept_unsafe() {
+        expected<Socket> accept() {
             int connected_fd = ::accept(fd, nullptr, nullptr);
             if (connected_fd == -1) {
-                close(fd); // TODO: needed?
-                ::std::cerr << strerror(errno) << std::endl;
-                std::terminate();
+                return std::string(strerror(errno));
             }
             return Socket(connected_fd);
         }
@@ -181,18 +157,11 @@ namespace tcp {
         expected<monostate> recv_n(char* buf, size_t n) {
             size_t total_read = 0;
             while (total_read < n) {
-                ssize_t read = recv(fd, buf + total_read, n - total_read, 0);
-                if (read == 0) {
-                    return std::string("reached EOF: peer has performed an orderly shutdown");
-                } else if (read < 0) {
-                    return std::string(strerror(errno));
-                }
-                total_read += static_cast<size_t>(read);
+                total_read += VALUE_OR(RETURN, recv_(buf + total_read, n - total_read));
             }
             return monostate{};
         }
 
-        // FIXME: delete
         expected<size_t> recv_(char* buf, size_t n) {
             ssize_t read = recv(fd, buf, n, 0);
             if (read == 0) {
@@ -204,6 +173,8 @@ namespace tcp {
         }
 
 
+    };
+}
         // DEBUG APIS
             // int optval;
             // socklen_t optlen = sizeof(optval);
@@ -271,5 +242,3 @@ pub fn getsockopt<T: Copy>(sock: &Socket, level: c_int, option_name: c_int) -> i
 }
 
             */
-    };
-}

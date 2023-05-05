@@ -48,25 +48,16 @@ int main(int argc, char * argv[])
         }
     }
 
-    #define value_or_eprint_exit(expected) {(auto res = (expected), res ? res.value() : (std::cerr << res.error() << std::endl; exit(1)))}
-
     print_help();
     for(;;) {
         string cmd {};
         char response[4096];
 
         std::cerr << "connecting to server . . .";
-        // TODO: use macro to handle failure
-        // tcp::Socket client = value_or_eprint_exit(tcp::Socket::create());
-        // value_or_eprint_exit(client.connect(host, port));
-        tcp::Socket client = tcp::Socket::create_unsafe(); // FIXME: use create()
-
-        // FIXME: use macros
-        auto client_exp = client.connect(host, port);
-        if(!bool(client_exp)) {
-            std::cerr << client_exp.err() << std::endl;
-            exit(1);
-        }
+        
+        tcp::Socket client = VALUE_OR(THROW, tcp::Socket::create());
+        VALUE_OR(THROW, client.connect(host, port));
+        
         std::cerr << " done" << std::endl;
 
         for(;;) {
@@ -77,26 +68,17 @@ int main(int argc, char * argv[])
             cmd.clear();
             getline(std::cin, cmd);
 
-
             // SEND INPUT TO SERVER
-            {auto exp = client.send_all(cmd);
-            if (!exp) {
-                std::cerr << "write_all failed: " << exp.err() << '\n';
-                break;
-            }}
+            VALUE_OR(PBREAK, client.send_all(cmd));
 
             // GET SERVER RESPONSE
             // FIXME: read one nestring: expected = client >> Netstring("")
-            auto exp = client.recv_(response, 4096);
-            if (!(exp)) {
-                std::cerr << "recv failed: " << exp.err() << '\n';
-                break;
-            }
+            size_t bytes_read = VALUE_OR(PBREAK, client.recv_(response, 4096));
 
             // DISPLAY SERVER RESPONSE
-            // std::cout << "rediss-server> ";
-            for(auto i = 0; i < exp.val(); i++) {
-                std::cout << response[i]; // TODO: parse result and print it formatted
+            for(auto i = 0; i < bytes_read; i++) {
+                // TODO: parse result and print it formatted
+                std::cout << response[i];
             }
             std::cout << std::endl;
         }

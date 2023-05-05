@@ -10,7 +10,8 @@ using std::string;
 #include <sstream>
 
 namespace utils {
-    void assert_eq(string got, string expected) {
+    template<typename T>
+    void assert_eq(T got, T expected) {
         if (got != expected) {
             std::ostringstream error {};
             error << "assertion failed - expected: `" << expected << "`, got: `" << got << "`\n";

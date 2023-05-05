@@ -90,10 +90,10 @@ namespace netstring {
         Netstring out("");
 
         dummy_socket << "hello"_nv;
-        utils::assert_eq(dummy_socket.str(), "5:hello,");
+        utils::assert_eq(dummy_socket.str(), string("5:hello,"));
 
         dummy_socket << NetstringView(in2);
-        utils::assert_eq(dummy_socket.str(), "5:hello,5:world,");
+        utils::assert_eq(dummy_socket.str(), string("5:hello,5:world,"));
 
         dummy_socket >> out;
         utils::assert_eq(out.inner, in1);

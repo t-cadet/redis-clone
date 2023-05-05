@@ -87,12 +87,12 @@ namespace store {
     void tests() {
         std::cout << "running store tests . . .";
 
-        utils::assert_eq(Store::ping(), "pong");
+        utils::assert_eq(Store::ping(), string("pong"));
 
         Store s {};
 
         s.set("a", "1");
-        utils::assert_eq(s.get("a").value(), "1");
+        utils::assert_eq(s.get("a").value(), string("1"));
 
         if (!s.del("a")) {
             std::abort();

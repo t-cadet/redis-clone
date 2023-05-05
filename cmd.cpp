@@ -375,12 +375,12 @@ namespace cmd {
 
             // run cmd & write result
             out1 << cmd->run(s);
-            utils::assert_eq(out1.str(), "pong");
+            utils::assert_eq(out1.str(), string("pong"));
 
             // parse result
             PingResult res{""};
             out1 >> res;
-            utils::assert_eq(res.pong, "pong");
+            utils::assert_eq(res.pong, string("pong"));
         }
         {
             Store s {};
@@ -393,14 +393,18 @@ namespace cmd {
 
             // run cmd & write result
             out1 << cmd->run(s);
-            utils::assert_eq(out1.str(), "unknown command: pinga");
+            utils::assert_eq(out1.str(), string("unknown command: pinga"));
 
             // parse result
             ErrorResult res{""};
             out1 >> res;
-            utils::assert_eq(res.error, "unknown command: pinga");
+            utils::assert_eq(res.error, string("unknown command: pinga"));
         }
 
         std::cerr << " ok\n";
     }
 }
+
+// int main() {
+//     cmd::tests();
+// }
